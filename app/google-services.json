@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "784932932448",
+    "project_id": "passbrook-1fafd"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:784932932448:android:e0259cf3f6658f72",
+        "android_client_info": {
+          "package_name": "com.passbrook.challenge"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "784932932448-qbt4jb3jmkh9ecahbuob9bm5iss3o7lh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.passbrook.challenge",
+            "certificate_hash": "D80C986B611D1ABCC48B8353B11B2196B7C247A2"
+          }
+        },
+        {
+          "client_id": "784932932448-02b40sdtmqnos2j0dg07l2mr8qsm0b1g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAldNP9PGBQMnS0GM-9FOxZTdmizUe1pDI"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
