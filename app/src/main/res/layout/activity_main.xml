@@ -16,13 +16,13 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:gravity="center"
-        android:text="You must be login first to create folder or uploading content."
+        android:text="You must be logged in to create folder or uploading content."
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textColor="@color/grey"
         android:visibility="gone" />
 
     <Button
-        android:id="@+id/create_folder"
+        android:id="@+id/b_create_folder"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"

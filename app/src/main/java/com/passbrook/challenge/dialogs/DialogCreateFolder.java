@@ -49,14 +49,14 @@ public class DialogCreateFolder extends DialogFragment {
                 })
                 .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        
+
                     }
                 });
 
         return builder.create();
     }
 
-    void setListener(OnCreateButtonClicked onCreateButtonClicked) {
+    public void setListener(OnCreateButtonClicked onCreateButtonClicked) {
         this.onCreateButtonClicked = onCreateButtonClicked;
     }
 }
