@@ -1,4 +1,4 @@
-package com.passbrook.challenge.dialogs;
+package com.passbrook.challenge.interfaces;
 
 /**
  * Created by sandeeprana on 26/11/16.

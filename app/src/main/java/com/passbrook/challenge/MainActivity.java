@@ -3,7 +3,10 @@ package com.passbrook.challenge;
 
 import android.content.Intent;
 import android.content.IntentSender;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
@@ -17,17 +20,92 @@ import android.widget.TextView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.drive.Drive;
+import com.google.android.gms.drive.DriveApi;
+import com.google.android.gms.drive.DriveContents;
+import com.google.android.gms.drive.DriveFile;
+import com.google.android.gms.drive.DriveFolder;
+import com.google.android.gms.drive.MetadataChangeSet;
 import com.passbrook.challenge.dialogs.DialogCreateFolder;
-import com.passbrook.challenge.dialogs.OnCreateButtonClicked;
+import com.passbrook.challenge.interfaces.OnCreateButtonClicked;
+import com.passbrook.challenge.interfaces.OnUpdateUI;
+import com.passbrook.challenge.utility.AsyncImageGet;
+import com.passbrook.challenge.utility.UIUpdate;
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, OnCreateButtonClicked {
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, OnCreateButtonClicked, OnUpdateUI, ResultCallback<DriveFolder.DriveFileResult> {
 
     private static final String TAG = "MAINACTIVITY";
     private static final int RESOLVE_CONNECTION_REQUEST_CODE = 12;
     TextView textHomeWarning;
     Button buttonOpenDialogCreateFolder;
+    ResultCallback<DriveFolder.DriveFolderResult> folderCreatedCallback = new
+            ResultCallback<DriveFolder.DriveFolderResult>() {
+                @Override
+                public void onResult(DriveFolder.DriveFolderResult result) {
+                    Log.e("FOLDERRESULT", "got result");
+                    if (!result.getStatus().isSuccess()) {
+//                        showMessage("Error while trying to create the folder");
+                        Log.e("FOLDERRESULT", "Error : creating folder");
+                        Snackbar.make(textHomeWarning.getRootView(), "Error: creating folder" + result.getDriveFolder().getDriveId(), Snackbar.LENGTH_SHORT);
+                        buttonOpenDialogCreateFolder.setVisibility(View.VISIBLE);
+                        buttonOpenDialogCreateFolder.setEnabled(true);
+                        return;
+                    }
+
+                    buttonOpenDialogCreateFolder.setVisibility(View.GONE);
+                    Snackbar.make(textHomeWarning.getRootView(), "Created a folder: " + result.getDriveFolder().getDriveId(), Snackbar.LENGTH_SHORT);
+                    Log.e("FOLDERRESULT", "Folder created!");
+                    uploadRandomImage(result);
+                }
+            };
+    private String filePath;
     private GoogleApiClient mGoogleApiClient;
+    ResultCallback<DriveApi.DriveContentsResult> contentsOpenedCallback =
+            new ResultCallback<DriveApi.DriveContentsResult>() {
+
+                @Override
+                public void onResult(DriveApi.DriveContentsResult result) {
+                    if (!result.getStatus().isSuccess()) {
+                        // display an error saying file can't be opened
+                        Log.e("Failed", "Success for what");
+                        return;
+                    }
+                    // DriveContents object contains pointers
+                    // to the actual byte stream
+                    DriveContents contents = result.getDriveContents();
+                    Log.e("Success", "Writing to file");
+                    File file = new File(filePath);
+                    try {
+                        ParcelFileDescriptor parcelFileDescriptor = contents.getParcelFileDescriptor();
+
+                        FileInputStream fileInputStream = new FileInputStream(file);
+
+                        FileOutputStream fileOutputStream = new FileOutputStream(parcelFileDescriptor
+                                .getFileDescriptor());
+                        
+                        byte[] buffer = new byte[1024];
+                        int len;
+                        while ((len = fileInputStream.read(buffer)) != -1) {
+                            fileOutputStream.write(buffer, 0, len);
+                        }
+                        // Append to the file.
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+                            .setTitle(file.getName())
+                            .setMimeType("image/jpeg").build();
+                    contents.commit(mGoogleApiClient, changeSet);
+
+                }
+            };
 
     @Override
 
@@ -43,6 +121,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
+//        getOneFileOutOfAll(this);
     }
 
     @Override
@@ -56,7 +135,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onDestroy();
         mGoogleApiClient.disconnect();
     }
-
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
@@ -106,6 +184,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     public void openDialogCreateAndUpload(View view) {
+        //View Disabled after first Click
+        if (view != null) view.setEnabled(false);
+
+        /**
+         * Code to open the dialog window
+         */
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         Fragment prev = getSupportFragmentManager().findFragmentByTag("dialog");
         if (prev != null) {
@@ -121,5 +205,60 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onCreateButtonClicked(String folderName) {
         Log.e("FOLDER", folderName + "");
+
+        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+                .setTitle(folderName).build();
+        Drive.DriveApi.getRootFolder(mGoogleApiClient).createFolder(mGoogleApiClient, changeSet)
+                .setResultCallback(folderCreatedCallback);
     }
+
+    private void uploadRandomImage(DriveFolder.DriveFolderResult result) {
+        textHomeWarning.setVisibility(View.VISIBLE);
+        AsyncImageGet asyncImageGet = new AsyncImageGet(this, result);
+        asyncImageGet.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, this);
+    }
+
+    @Override
+    public void onUpdateUI(UIUpdate uiUpdate) {
+        if (uiUpdate != null) {
+            Log.e("UIUPDATE", uiUpdate.getMessage() + String.valueOf(uiUpdate.getProgress()) + "%");
+            textHomeWarning.setText(uiUpdate.getMessage() + "\n" + String.valueOf(uiUpdate.getProgress()) + "%");
+        }
+
+    }
+
+    @Override
+    public void imageLoadingFinished(String pathToImage, DriveFolder.DriveFolderResult result) {
+        textHomeWarning.setText("Image Uploaded Successfully!");
+
+        this.filePath = pathToImage;
+
+        File file = new File(pathToImage);
+
+        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+                .setTitle(file.getName())
+                .setMimeType("image/jpeg").build();
+        // Create a file in the root folder
+        result.getDriveFolder()
+                .createFile(mGoogleApiClient, changeSet, null)
+                .setResultCallback(this);
+
+
+        Log.e("PATHTOIMAGE", pathToImage + "");
+    }
+
+    @Override
+    public void onResult(@NonNull DriveFolder.DriveFileResult driveFileResult) {
+
+        Log.e("ONRESULT", "OVERclocked");
+        driveFileResult.getDriveFile().open(mGoogleApiClient, DriveFile.MODE_WRITE_ONLY, new DriveFile.DownloadProgressListener() {
+            @Override
+            public void onProgress(long l, long l1) {
+                Log.e("PROGRESS", String.format("First l : %d , Second l1 : %d", l, l1));
+            }
+        })
+                .setResultCallback(contentsOpenedCallback);
+
+    }
+
 }
