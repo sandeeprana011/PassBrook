@@ -181,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onConnected(@Nullable Bundle bundle) {
 //        Snackbar.make(null, R.string.error_connection_failed, Snackbar.LENGTH_LONG).show();
+        buttonOpenDialogCreateFolder.setVisibility(View.VISIBLE);
         Log.e(TAG, "Connected!");
         String folderName = preferences.getString(Constants.FOLDER_NAME, null);
         String fileName = preferences.getString(Constants.FILE_NAME, null);
@@ -209,6 +210,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         //If not logged in
         textHomeWarning.setVisibility(View.VISIBLE);
+        buttonOpenDialogCreateFolder.setVisibility(View.GONE);
 
         if (connectionResult.hasResolution()) {
             try {
@@ -346,6 +348,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 // Show an explanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        MY_PERMISSIONS_REQUEST_READ_CONTACTS);
 
             } else {
 
