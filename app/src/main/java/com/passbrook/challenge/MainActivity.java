@@ -3,9 +3,11 @@ package com.passbrook.challenge;
 
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
@@ -26,6 +28,7 @@ import com.google.android.gms.drive.DriveApi;
 import com.google.android.gms.drive.DriveContents;
 import com.google.android.gms.drive.DriveFile;
 import com.google.android.gms.drive.DriveFolder;
+import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.MetadataChangeSet;
 import com.passbrook.challenge.dialogs.DialogCreateFolder;
 import com.passbrook.challenge.interfaces.OnCreateButtonClicked;
@@ -37,6 +40,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, OnCreateButtonClicked, OnUpdateUI, ResultCallback<DriveFolder.DriveFileResult> {
 
@@ -60,8 +64,26 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                     buttonOpenDialogCreateFolder.setVisibility(View.GONE);
                     Snackbar.make(textHomeWarning.getRootView(), "Created a folder: " + result.getDriveFolder().getDriveId(), Snackbar.LENGTH_SHORT);
-                    Log.e("FOLDERRESULT", "Folder created!");
+                    Log.e("FOLDERRESULT", "Folder created!" + result.getDriveFolder());
+
                     uploadRandomImage(result);
+                }
+            };
+    ResultCallback<DriveApi.DriveContentsResult> fileDownloadedCallback =
+            new ResultCallback<DriveApi.DriveContentsResult>() {
+                @Override
+                public void onResult(DriveApi.DriveContentsResult result) {
+                    if (!result.getStatus().isSuccess()) {
+                        // display an error saying file can't be opened
+                        return;
+                    }
+                    // DriveContents object contains pointers
+                    // to the actual byte stream
+                    DriveContents contents = result.getDriveContents();
+
+                    loadImageFromStream(contents.getInputStream());
+
+
                 }
             };
     private String filePath;
@@ -79,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     // DriveContents object contains pointers
                     // to the actual byte stream
                     DriveContents contents = result.getDriveContents();
+
                     Log.e("Success", "Writing to file");
                     File file = new File(filePath);
                     try {
@@ -88,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                         FileOutputStream fileOutputStream = new FileOutputStream(parcelFileDescriptor
                                 .getFileDescriptor());
-                        
+
                         byte[] buffer = new byte[1024];
                         int len;
                         while ((len = fileInputStream.read(buffer)) != -1) {
@@ -104,8 +127,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             .setMimeType("image/jpeg").build();
                     contents.commit(mGoogleApiClient, changeSet);
 
+
                 }
             };
+    private SharedPreferences preferences;
+
+    private void loadImageFromStream(InputStream inputStream) {
+
+    }
 
     @Override
 
@@ -114,6 +143,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         setContentView(R.layout.activity_main);
         textHomeWarning = (TextView) findViewById(R.id.t_warning_home);
         buttonOpenDialogCreateFolder = (Button) findViewById(R.id.b_create_folder);
+        preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Drive.API)
@@ -121,7 +151,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-//        getOneFileOutOfAll(this);
+        String folderName = preferences.getString(Constants.FOLDER_NAME, null);
+        String fileName = preferences.getString(Constants.FILE_NAME, null);
+        String fileId = preferences.getString(Constants.DRIVE_FILE_ID, null);
+        if (folderName != null && !folderName.equals("") && fileName != null && !fileName.equals("")) {
+//            buttonOpenDialogCreateFolder.setVisibility(View.GONE);
+//            textHomeWarning.setVisibility(View.GONE);
+            DriveId sFileId = DriveId.decodeFromString(fileId);
+            DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient, sFileId);
+
+            file.open(mGoogleApiClient, DriveFile.MODE_READ_ONLY, null)
+                    .setResultCallback(fileDownloadedCallback);
+
+
+        }
     }
 
     @Override
@@ -206,6 +249,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onCreateButtonClicked(String folderName) {
         Log.e("FOLDER", folderName + "");
 
+        preferences.edit().putString(Constants.FOLDER_NAME, folderName).apply();
+
         MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
                 .setTitle(folderName).build();
         Drive.DriveApi.getRootFolder(mGoogleApiClient).createFolder(mGoogleApiClient, changeSet)
@@ -235,6 +280,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         File file = new File(pathToImage);
 
+        //saving file name to get after storing the image
+        preferences.edit().putString(Constants.FILE_NAME, file.getName()).apply();
+
         MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
                 .setTitle(file.getName())
                 .setMimeType("image/jpeg").build();
@@ -243,7 +291,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .createFile(mGoogleApiClient, changeSet, null)
                 .setResultCallback(this);
 
-
         Log.e("PATHTOIMAGE", pathToImage + "");
     }
 
@@ -251,6 +298,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onResult(@NonNull DriveFolder.DriveFileResult driveFileResult) {
 
         Log.e("ONRESULT", "OVERclocked");
+
         driveFileResult.getDriveFile().open(mGoogleApiClient, DriveFile.MODE_WRITE_ONLY, new DriveFile.DownloadProgressListener() {
             @Override
             public void onProgress(long l, long l1) {
@@ -258,6 +306,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         })
                 .setResultCallback(contentsOpenedCallback);
+
+        preferences.edit().putString(Constants.DRIVE_FILE_ID, driveFileResult.getDriveFile().getDriveId().encodeToString()).apply();
+    }
+
+    public void queryFile() {
+
+        String fileName = preferences.getString(Constants.FILE_NAME, null);
+        String folderName = preferences.getString(Constants.FOLDER_NAME, null);
 
     }
 
