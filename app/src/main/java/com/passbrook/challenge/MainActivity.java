@@ -4,6 +4,7 @@ package com.passbrook.challenge;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
@@ -17,6 +18,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -69,23 +71,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     uploadRandomImage(result);
                 }
             };
-    ResultCallback<DriveApi.DriveContentsResult> fileDownloadedCallback =
-            new ResultCallback<DriveApi.DriveContentsResult>() {
-                @Override
-                public void onResult(DriveApi.DriveContentsResult result) {
-                    if (!result.getStatus().isSuccess()) {
-                        // display an error saying file can't be opened
-                        return;
-                    }
-                    // DriveContents object contains pointers
-                    // to the actual byte stream
-                    DriveContents contents = result.getDriveContents();
-
-                    loadImageFromStream(contents.getInputStream());
-
-
-                }
-            };
     private String filePath;
     private GoogleApiClient mGoogleApiClient;
     ResultCallback<DriveApi.DriveContentsResult> contentsOpenedCallback =
@@ -131,8 +116,28 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 }
             };
     private SharedPreferences preferences;
+    private ImageView imageViewThumbnail;
+    ResultCallback<DriveApi.DriveContentsResult> fileDownloadedCallback =
+            new ResultCallback<DriveApi.DriveContentsResult>() {
+                @Override
+                public void onResult(DriveApi.DriveContentsResult result) {
+                    if (!result.getStatus().isSuccess()) {
+                        // display an error saying file can't be opened
+                        return;
+                    }
+                    // DriveContents object contains pointers
+                    // to the actual byte stream
+                    DriveContents contents = result.getDriveContents();
+
+                    loadImageFromStream(contents.getInputStream());
+
+
+                }
+            };
 
     private void loadImageFromStream(InputStream inputStream) {
+
+        imageViewThumbnail.setImageBitmap(BitmapFactory.decodeStream(inputStream));
 
     }
 
@@ -143,6 +148,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         setContentView(R.layout.activity_main);
         textHomeWarning = (TextView) findViewById(R.id.t_warning_home);
         buttonOpenDialogCreateFolder = (Button) findViewById(R.id.b_create_folder);
+        imageViewThumbnail = (ImageView) findViewById(R.id.image_thumbnail_folder);
+
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -151,20 +158,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-        String folderName = preferences.getString(Constants.FOLDER_NAME, null);
-        String fileName = preferences.getString(Constants.FILE_NAME, null);
-        String fileId = preferences.getString(Constants.DRIVE_FILE_ID, null);
-        if (folderName != null && !folderName.equals("") && fileName != null && !fileName.equals("")) {
-//            buttonOpenDialogCreateFolder.setVisibility(View.GONE);
-//            textHomeWarning.setVisibility(View.GONE);
-            DriveId sFileId = DriveId.decodeFromString(fileId);
-            DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient, sFileId);
-
-            file.open(mGoogleApiClient, DriveFile.MODE_READ_ONLY, null)
-                    .setResultCallback(fileDownloadedCallback);
-
-
-        }
     }
 
     @Override
@@ -183,6 +176,21 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onConnected(@Nullable Bundle bundle) {
 //        Snackbar.make(null, R.string.error_connection_failed, Snackbar.LENGTH_LONG).show();
         Log.e(TAG, "Connected!");
+        String folderName = preferences.getString(Constants.FOLDER_NAME, null);
+        String fileName = preferences.getString(Constants.FILE_NAME, null);
+        String fileId = preferences.getString(Constants.DRIVE_FILE_ID, null);
+        if (folderName != null && !folderName.equals("") && fileName != null && !fileName.equals("")) {
+//            buttonOpenDialogCreateFolder.setVisibility(View.GONE);
+//            textHomeWarning.setVisibility(View.GONE);
+            DriveId sFileId = DriveId.decodeFromString(fileId);
+            DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient, sFileId);
+
+            file.open(mGoogleApiClient, DriveFile.MODE_READ_ONLY, null)
+                    .setResultCallback(fileDownloadedCallback);
+
+
+        }
+
     }
 
     @Override

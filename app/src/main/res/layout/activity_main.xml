@@ -29,4 +29,9 @@
         android:onClick="openDialogCreateAndUpload"
         android:text="Create &amp; Upload" />
 
+    <ImageView
+        android:id="@+id/image_thumbnail_folder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
 </RelativeLayout>
