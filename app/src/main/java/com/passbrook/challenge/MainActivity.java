@@ -1,9 +1,11 @@
 package com.passbrook.challenge;
 
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -12,8 +14,10 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -48,29 +52,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private static final String TAG = "MAINACTIVITY";
     private static final int RESOLVE_CONNECTION_REQUEST_CODE = 12;
+    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 43;
     TextView textHomeWarning;
     Button buttonOpenDialogCreateFolder;
-    ResultCallback<DriveFolder.DriveFolderResult> folderCreatedCallback = new
-            ResultCallback<DriveFolder.DriveFolderResult>() {
-                @Override
-                public void onResult(DriveFolder.DriveFolderResult result) {
-                    Log.e("FOLDERRESULT", "got result");
-                    if (!result.getStatus().isSuccess()) {
-//                        showMessage("Error while trying to create the folder");
-                        Log.e("FOLDERRESULT", "Error : creating folder");
-                        Snackbar.make(textHomeWarning.getRootView(), "Error: creating folder" + result.getDriveFolder().getDriveId(), Snackbar.LENGTH_SHORT);
-                        buttonOpenDialogCreateFolder.setVisibility(View.VISIBLE);
-                        buttonOpenDialogCreateFolder.setEnabled(true);
-                        return;
-                    }
-
-                    buttonOpenDialogCreateFolder.setVisibility(View.GONE);
-                    Snackbar.make(textHomeWarning.getRootView(), "Created a folder: " + result.getDriveFolder().getDriveId(), Snackbar.LENGTH_SHORT);
-                    Log.e("FOLDERRESULT", "Folder created!" + result.getDriveFolder());
-
-                    uploadRandomImage(result);
-                }
-            };
     private String filePath;
     private GoogleApiClient mGoogleApiClient;
     ResultCallback<DriveApi.DriveContentsResult> contentsOpenedCallback =
@@ -134,6 +118,28 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                 }
             };
+    private DriveFolder.DriveFolderResult result;
+    ResultCallback<DriveFolder.DriveFolderResult> folderCreatedCallback = new
+            ResultCallback<DriveFolder.DriveFolderResult>() {
+                @Override
+                public void onResult(DriveFolder.DriveFolderResult result) {
+                    Log.e("FOLDERRESULT", "got result");
+                    if (!result.getStatus().isSuccess()) {
+//                        showMessage("Error while trying to create the folder");
+                        Log.e("FOLDERRESULT", "Error : creating folder");
+                        Snackbar.make(textHomeWarning.getRootView(), "Error: creating folder" + result.getDriveFolder().getDriveId(), Snackbar.LENGTH_SHORT);
+                        buttonOpenDialogCreateFolder.setVisibility(View.VISIBLE);
+                        buttonOpenDialogCreateFolder.setEnabled(true);
+                        return;
+                    }
+
+                    buttonOpenDialogCreateFolder.setVisibility(View.GONE);
+                    Snackbar.make(textHomeWarning.getRootView(), "Created a folder: " + result.getDriveFolder().getDriveId(), Snackbar.LENGTH_SHORT);
+                    Log.e("FOLDERRESULT", "Folder created!" + result.getDriveFolder());
+
+                    uploadRandomImage(result);
+                }
+            };
 
     private void loadImageFromStream(InputStream inputStream) {
 
@@ -187,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             file.open(mGoogleApiClient, DriveFile.MODE_READ_ONLY, null)
                     .setResultCallback(fileDownloadedCallback);
-
+            buttonOpenDialogCreateFolder.setVisibility(View.GONE);
 
         }
 
@@ -266,9 +272,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     private void uploadRandomImage(DriveFolder.DriveFolderResult result) {
-        textHomeWarning.setVisibility(View.VISIBLE);
-        AsyncImageGet asyncImageGet = new AsyncImageGet(this, result);
-        asyncImageGet.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, this);
+
+        this.result = result;
+        checkCompatibility();
+
+
     }
 
     @Override
@@ -281,7 +289,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    public void imageLoadingFinished(String pathToImage, DriveFolder.DriveFolderResult result) {
+    public void imageLoadingFinished(String pathToImage) {
         textHomeWarning.setText("Image Uploaded Successfully!");
 
         this.filePath = pathToImage;
@@ -295,7 +303,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .setTitle(file.getName())
                 .setMimeType("image/jpeg").build();
         // Create a file in the root folder
-        result.getDriveFolder()
+        this.result.getDriveFolder()
                 .createFile(mGoogleApiClient, changeSet, null)
                 .setResultCallback(this);
 
@@ -318,11 +326,71 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         preferences.edit().putString(Constants.DRIVE_FILE_ID, driveFileResult.getDriveFile().getDriveId().encodeToString()).apply();
     }
 
-    public void queryFile() {
+//    public void queryFile() {
+//
+//        String fileName = preferences.getString(Constants.FILE_NAME, null);
+//        String folderName = preferences.getString(Constants.FOLDER_NAME, null);
+//
+//    }
 
-        String fileName = preferences.getString(Constants.FILE_NAME, null);
-        String folderName = preferences.getString(Constants.FOLDER_NAME, null);
+    public void checkCompatibility() {
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
 
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                Log.e("This block", "1");
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+                Log.e("This block", "2");
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        } else {
+            Log.e("Some", "Permission granted");
+            textHomeWarning.setVisibility(View.VISIBLE);
+            AsyncImageGet asyncImageGet = new AsyncImageGet(this, result);
+            asyncImageGet.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, this);
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_CONTACTS: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    textHomeWarning.setVisibility(View.VISIBLE);
+                    AsyncImageGet asyncImageGet = new AsyncImageGet(this, result);
+                    asyncImageGet.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, this);
+
+                } else {
+                    textHomeWarning.setVisibility(View.VISIBLE);
+                    textHomeWarning.setText("Permission required!");
+                    buttonOpenDialogCreateFolder.setVisibility(View.GONE);
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
     }
 
 }

@@ -1,6 +1,5 @@
 package com.passbrook.challenge.interfaces;
 
-import com.google.android.gms.drive.DriveFolder;
 import com.passbrook.challenge.utility.UIUpdate;
 
 /**
@@ -15,5 +14,5 @@ import com.passbrook.challenge.utility.UIUpdate;
 public interface OnUpdateUI {
     public void onUpdateUI(UIUpdate uiUpdate);
 
-    public void imageLoadingFinished(String pathToImage, DriveFolder.DriveFolderResult result);
+    public void imageLoadingFinished(String pathToImage);
 }

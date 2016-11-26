@@ -29,7 +29,7 @@ public class AsyncImageGet extends AsyncTask<Context, UIUpdate, String> {
 
     public AsyncImageGet(OnUpdateUI onUpdateUIListener, DriveFolder.DriveFolderResult result) {
         this.onUpdateUIListener = onUpdateUIListener;
-        this.result = result;
+//        this.result = result;
     }
 
     @Override
@@ -85,7 +85,7 @@ public class AsyncImageGet extends AsyncTask<Context, UIUpdate, String> {
     protected void onPostExecute(String pathToImage) {
         super.onPostExecute(pathToImage);
         if (onUpdateUIListener != null) {
-            this.onUpdateUIListener.imageLoadingFinished(pathToImage, result);
+            this.onUpdateUIListener.imageLoadingFinished(pathToImage);
         }
     }
 }
