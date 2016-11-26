@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 43;
     private static final int PICKFILE_REQUEST_CODE = 34;
     TextView textHomeWarning;
-    Button buttonOpenDialogCreateFolder, uploadRandomPhoto;
+    Button buttonOpenDialogCreateFolder, buttonUploadRandomPhoto;
 
     private String filePath;
     private GoogleApiClient mGoogleApiClient;
@@ -110,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private SignInButton signInGoogle;
     private ConnectionResult connectionResult;
     private FolderListAdapter folderListAdapter;
+    private Button buttonUploadPhotoBySelecting;
     ResultCallback<DriveApi.DriveContentsResult> contentsOpenedCallback =
             new ResultCallback<DriveApi.DriveContentsResult>() {
 
@@ -149,7 +150,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             .setMimeType("image/*").build();
                     contents.commit(mGoogleApiClient, changeSet);
 
-                    uploadRandomPhoto.setEnabled(true);
+                    buttonUploadRandomPhoto.setEnabled(true);
                     executeIfWeAreGoodToGoAfterAllRefreshUI();
 
                 }
@@ -177,7 +178,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         imageViewThumbnail = (ImageView) findViewById(R.id.image_thumbnail_folder);
         signInGoogle = (SignInButton) findViewById(R.id.signingoogle);
         folderListView = (ListView) findViewById(R.id.list_folder_content);
-        uploadRandomPhoto = (Button) findViewById(R.id.uploadmore);
+        buttonUploadRandomPhoto = (Button) findViewById(R.id.uploadmore);
+        buttonUploadPhotoBySelecting = (Button) findViewById(R.id.uploadmorebyselect);
 
         folderListAdapter = new FolderListAdapter(MainActivity.this);
         folderListView.setAdapter(folderListAdapter);
@@ -258,10 +260,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             .build();
                     folder.queryChildren(mGoogleApiClient, query).setResultCallback(folderListCallback);
 
-                    uploadRandomPhoto.setEnabled(true);
-                    uploadRandomPhoto.setVisibility(View.VISIBLE);
+                    buttonUploadRandomPhoto.setEnabled(true);
+                    buttonUploadRandomPhoto.setVisibility(View.VISIBLE);
+                    
+                    buttonUploadPhotoBySelecting.setEnabled(true);
+                    buttonUploadPhotoBySelecting.setVisibility(View.VISIBLE);
 
-                    uploadRandomPhoto.setOnClickListener(new View.OnClickListener() {
+                    buttonUploadRandomPhoto.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
                             view.setEnabled(false);

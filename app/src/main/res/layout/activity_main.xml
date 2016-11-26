@@ -43,7 +43,7 @@
         android:id="@+id/list_folder_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/uploadmore"
+        android:layout_above="@+id/linuploadmore"
         android:layout_below="@+id/signingoogle"
         android:background="@color/grey_light"
         android:padding="7dp" />
@@ -58,6 +58,7 @@
 
         <Button
             android:id="@+id/uploadmore"
+            android:visibility="gone"
             style="@style/Widget.AppCompat.Button.Colored"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -70,6 +71,7 @@
             android:id="@+id/uploadmorebyselect"
             style="@style/Widget.AppCompat.Button.Colored"
             android:layout_width="0dp"
+            android:visibility="gone"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
