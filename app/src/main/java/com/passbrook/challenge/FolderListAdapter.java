@@ -26,7 +26,7 @@ import com.google.android.gms.drive.widget.DataBufferAdapter;
 public class FolderListAdapter extends DataBufferAdapter<Metadata> {
 
     public FolderListAdapter(Context context) {
-        super(context, android.R.layout.simple_list_item_1);
+        super(context, R.layout.layoutsimplewithimage);
     }
 
     @Override

@@ -40,21 +40,22 @@
         android:layout_height="match_parent" />
 
     <ListView
-        android:padding="7dp"
+        android:background="@color/grey_light"
         android:id="@+id/list_folder_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/uploadmore"
-        android:layout_below="@+id/signingoogle" />
+        android:layout_below="@+id/signingoogle"
+        android:padding="7dp" />
 
     <Button
         android:id="@+id/uploadmore"
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="wrap_content"
-        android:padding="7dp"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:padding="7dp"
         android:text="Upload Random Photo"
-        android:visibility="gone"
-        />
+        android:visibility="gone" />
 </RelativeLayout>
