@@ -22,6 +22,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -78,8 +79,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     DriveContents contents = result.getDriveContents();
 
                     loadImageFromStream(contents.getInputStream());
-
-
                 }
             };
     private DriveFolder resultDriveFolder;

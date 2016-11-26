@@ -4,16 +4,13 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.passbrook.challenge.MainActivity">
 
     <com.google.android.gms.common.SignInButton
         android:id="@+id/signingoogle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="7dp"
         android:visibility="gone" />
 
     <TextView
@@ -43,18 +40,21 @@
         android:layout_height="match_parent" />
 
     <ListView
+        android:padding="7dp"
         android:id="@+id/list_folder_content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_above="@+id/uploadmore"
         android:layout_below="@+id/signingoogle" />
 
     <Button
         android:id="@+id/uploadmore"
         style="@style/Widget.AppCompat.Button.Colored"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
+        android:padding="7dp"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:text="Upload Random Photo"
-        android:visibility="gone" />
+        android:visibility="gone"
+        />
 </RelativeLayout>
