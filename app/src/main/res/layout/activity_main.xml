@@ -7,8 +7,9 @@
     tools:context="com.passbrook.challenge.MainActivity">
 
     <com.google.android.gms.common.SignInButton
+        android:layout_centerHorizontal="true"
         android:id="@+id/signingoogle"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="7dp"
         android:visibility="gone" />
@@ -58,26 +59,26 @@
 
         <Button
             android:id="@+id/uploadmore"
-            android:visibility="gone"
             style="@style/Widget.AppCompat.Button.Colored"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:padding="7dp"
-            android:text="Upload Random Photo" />
+            android:text="Upload Random Photo"
+            android:visibility="gone" />
 
         <Button
-            android:onClick="activityBuilder"
             android:id="@+id/uploadmorebyselect"
             style="@style/Widget.AppCompat.Button.Colored"
             android:layout_width="0dp"
-            android:visibility="gone"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
             android:layout_weight="1"
+            android:onClick="activityBuilder"
             android:padding="7dp"
-            android:text="Upload by Select" />
+            android:text="Upload by Select"
+            android:visibility="gone" />
     </LinearLayout>
 
 </RelativeLayout>

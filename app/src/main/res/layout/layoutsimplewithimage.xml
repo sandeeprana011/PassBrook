@@ -12,24 +12,31 @@
     app:elevation="0dp">
 
     <RelativeLayout
-        android:layout_margin="7dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
+        android:layout_margin="7dp"
         android:orientation="vertical"
         android:padding="7dp">
 
         <ImageView
             android:id="@+id/imageview_icon"
             android:layout_width="72dp"
-            android:layout_height="92dp"
-             />
+            android:layout_height="92dp" />
 
         <TextView
-            android:layout_below="@+id/imageview_icon"
+            android:textColor="@color/grey"
+            android:padding="10dp"
+            android:id="@+id/textview_filesize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/imageview_icon" />
+
+        <TextView
             android:id="@+id/textview_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_below="@+id/imageview_icon"
             android:layout_centerVertical="true"
             android:padding="7dp"
             android:text="Example File"

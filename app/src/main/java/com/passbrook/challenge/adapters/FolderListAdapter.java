@@ -1,4 +1,4 @@
-package com.passbrook.challenge;
+package com.passbrook.challenge.adapters;
 
 import android.content.Context;
 import android.util.Log;
@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import com.google.android.gms.drive.Metadata;
 import com.google.android.gms.drive.widget.DataBufferAdapter;
+import com.passbrook.challenge.R;
 
 /**
  * Created by sandeeprana on 26/11/16.
@@ -38,15 +39,15 @@ public class FolderListAdapter extends DataBufferAdapter<Metadata> {
         Metadata metadata = getItem(position);
         ImageView imageView = (ImageView) convertView.findViewById(R.id.imageview_icon);
         String mime = metadata.getMimeType();
-        if (mime.equals("image/jpeg") || metadata.getTitle().endsWith(".jpeg")) {
+        if (mime.equals("image/jpeg") || metadata.getTitle().toLowerCase().endsWith(".jpeg")) {
             imageView.setImageResource(R.drawable.jpg);
-        } else if (mime.equals("image/jpg") || metadata.getTitle().endsWith(".jpg")) {
+        } else if (mime.equals("image/jpg") || metadata.getTitle().toLowerCase().endsWith(".jpg")) {
             imageView.setImageResource(R.drawable.jpg);
-        } else if (mime.equals("image/doc") || metadata.getTitle().endsWith(".doc")) {
+        } else if (mime.equals("image/doc") || metadata.getTitle().toLowerCase().endsWith(".doc")) {
             imageView.setImageResource(R.drawable.doc);
-        } else if (mime.equals("image/png") || metadata.getTitle().endsWith(".png")) {
+        } else if (mime.equals("image/png") || metadata.getTitle().toLowerCase().endsWith(".png")) {
             imageView.setImageResource(R.drawable.png);
-        } else if (mime.equals("image/pdf") || metadata.getTitle().endsWith(".pdf")) {
+        } else if (mime.equals("image/pdf") || metadata.getTitle().toLowerCase().endsWith(".pdf")) {
             imageView.setImageResource(R.drawable.pdf);
         } else {
             imageView.setImageResource(R.drawable.unknown);
@@ -56,6 +57,10 @@ public class FolderListAdapter extends DataBufferAdapter<Metadata> {
         TextView titleTextView =
                 (TextView) convertView.findViewById(R.id.textview_title);
         titleTextView.setText(metadata.getTitle());
+
+        TextView fileSizeTextView =
+                (TextView) convertView.findViewById(R.id.textview_filesize);
+        fileSizeTextView.setText("size (bytes) : \n" + String.valueOf(metadata.getFileSize()));
 
         return convertView;
     }

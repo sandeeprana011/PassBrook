@@ -40,6 +40,7 @@ import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.MetadataChangeSet;
 import com.google.android.gms.drive.query.Query;
+import com.passbrook.challenge.adapters.FolderListAdapter;
 import com.passbrook.challenge.dialogs.DialogCreateFolder;
 import com.passbrook.challenge.interfaces.OnCreateButtonClicked;
 import com.passbrook.challenge.interfaces.OnUpdateUI;
@@ -177,6 +178,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         buttonOpenDialogCreateFolder = (Button) findViewById(R.id.b_create_folder);
         imageViewThumbnail = (ImageView) findViewById(R.id.image_thumbnail_folder);
         signInGoogle = (SignInButton) findViewById(R.id.signingoogle);
+
+        signInGoogle.setSize(SignInButton.SIZE_WIDE);
+
         folderListView = (ListView) findViewById(R.id.list_folder_content);
         buttonUploadRandomPhoto = (Button) findViewById(R.id.uploadmore);
         buttonUploadPhotoBySelecting = (Button) findViewById(R.id.uploadmorebyselect);
@@ -262,7 +266,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                     buttonUploadRandomPhoto.setEnabled(true);
                     buttonUploadRandomPhoto.setVisibility(View.VISIBLE);
-                    
+
                     buttonUploadPhotoBySelecting.setEnabled(true);
                     buttonUploadPhotoBySelecting.setVisibility(View.VISIBLE);
 
@@ -519,6 +523,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onClick(View view) {
         view.setEnabled(false);
+        view.setVisibility(View.GONE);
         if (this.connectionResult == null) {
             return;
         }
