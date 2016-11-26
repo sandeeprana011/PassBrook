@@ -62,48 +62,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private String filePath;
     private GoogleApiClient mGoogleApiClient;
-    ResultCallback<DriveApi.DriveContentsResult> contentsOpenedCallback =
-            new ResultCallback<DriveApi.DriveContentsResult>() {
-
-                @Override
-                public void onResult(DriveApi.DriveContentsResult result) {
-                    if (!result.getStatus().isSuccess()) {
-                        // display an error saying file can't be opened
-                        Log.e("Failed", "Success for what");
-                        return;
-                    }
-                    // DriveContents object contains pointers
-                    // to the actual byte stream
-                    DriveContents contents = result.getDriveContents();
-
-                    Log.e("Success", "Writing to file");
-                    File file = new File(filePath);
-                    try {
-                        ParcelFileDescriptor parcelFileDescriptor = contents.getParcelFileDescriptor();
-
-                        FileInputStream fileInputStream = new FileInputStream(file);
-
-                        FileOutputStream fileOutputStream = new FileOutputStream(parcelFileDescriptor
-                                .getFileDescriptor());
-
-                        byte[] buffer = new byte[1024];
-                        int len;
-                        while ((len = fileInputStream.read(buffer)) != -1) {
-                            fileOutputStream.write(buffer, 0, len);
-                        }
-                        // Append to the file.
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-                            .setTitle(file.getName())
-                            .setMimeType("image/*").build();
-                    contents.commit(mGoogleApiClient, changeSet);
-
-
-                }
-            };
     private ListView folderListView;
     private SharedPreferences preferences;
     private ImageView imageViewThumbnail;
@@ -152,6 +110,50 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private SignInButton signInGoogle;
     private ConnectionResult connectionResult;
     private FolderListAdapter folderListAdapter;
+    ResultCallback<DriveApi.DriveContentsResult> contentsOpenedCallback =
+            new ResultCallback<DriveApi.DriveContentsResult>() {
+
+                @Override
+                public void onResult(DriveApi.DriveContentsResult result) {
+                    if (!result.getStatus().isSuccess()) {
+                        // display an error saying file can't be opened
+                        Log.e("Failed", "Success for what");
+                        return;
+                    }
+                    // DriveContents object contains pointers
+                    // to the actual byte stream
+                    DriveContents contents = result.getDriveContents();
+
+                    Log.e("Success", "Writing to file");
+                    File file = new File(filePath);
+                    try {
+                        ParcelFileDescriptor parcelFileDescriptor = contents.getParcelFileDescriptor();
+
+                        FileInputStream fileInputStream = new FileInputStream(file);
+
+                        FileOutputStream fileOutputStream = new FileOutputStream(parcelFileDescriptor
+                                .getFileDescriptor());
+
+                        byte[] buffer = new byte[1024];
+                        int len;
+                        while ((len = fileInputStream.read(buffer)) != -1) {
+                            fileOutputStream.write(buffer, 0, len);
+                        }
+                        // Append to the file.
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+                            .setTitle(file.getName())
+                            .setMimeType("image/*").build();
+                    contents.commit(mGoogleApiClient, changeSet);
+
+                    uploadRandomPhoto.setEnabled(true);
+                    executeIfWeAreGoodToGoAfterAllRefreshUI();
+
+                }
+            };
 
     private void loadImageFromStream(InputStream inputStream) {
         try {
@@ -210,6 +212,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onConnected(@Nullable Bundle bundle) {
 //        Snackbar.make(null, R.string.error_connection_failed, Snackbar.LENGTH_LONG).show();
+        executeIfWeAreGoodToGoAfterAllRefreshUI();
+    }
+
+    private void executeIfWeAreGoodToGoAfterAllRefreshUI() {
         buttonOpenDialogCreateFolder.setVisibility(View.VISIBLE);
         Log.e(TAG, "Connected!");
         String folderName = preferences.getString(Constants.FOLDER_NAME, null);
@@ -231,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     folderListAdapter.clear();
                     Log.e("Meta Data Buf Size : ", String.valueOf(metadataBufferResult.getMetadataBuffer().getCount()));
                     folderListAdapter.append(metadataBufferResult.getMetadataBuffer());
+
                 }
             };
 
@@ -251,6 +258,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             .build();
                     folder.queryChildren(mGoogleApiClient, query).setResultCallback(folderListCallback);
 
+                    uploadRandomPhoto.setEnabled(true);
+                    uploadRandomPhoto.setVisibility(View.VISIBLE);
+
+                    uploadRandomPhoto.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            view.setEnabled(false);
+                            uploadRandomImage(folder);
+                        }
+                    });
 
 //                    Drive.DriveApi.query(mGoogleApiClient, query).setResultCallback(folderListCallback);
 
@@ -400,6 +417,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .setResultCallback(contentsOpenedCallback);
 
         preferences.edit().putString(Constants.DRIVE_FILE_ID, driveFileResult.getDriveFile().getDriveId().encodeToString()).apply();
+
     }
 
 //    public void queryFile() {
