@@ -23,12 +23,15 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.drive.DriveApi;
 import com.google.android.gms.drive.DriveContents;
@@ -36,6 +39,7 @@ import com.google.android.gms.drive.DriveFile;
 import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.MetadataChangeSet;
+import com.google.android.gms.drive.query.Query;
 import com.passbrook.challenge.dialogs.DialogCreateFolder;
 import com.passbrook.challenge.interfaces.OnCreateButtonClicked;
 import com.passbrook.challenge.interfaces.OnUpdateUI;
@@ -48,7 +52,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, OnCreateButtonClicked, OnUpdateUI, ResultCallback<DriveFolder.DriveFileResult> {
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, OnCreateButtonClicked, OnUpdateUI, ResultCallback<DriveFolder.DriveFileResult>, View.OnClickListener {
 
     private static final String TAG = "MAINACTIVITY";
     private static final int RESOLVE_CONNECTION_REQUEST_CODE = 12;
@@ -93,12 +97,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     }
                     MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
                             .setTitle(file.getName())
-                            .setMimeType("image/jpeg").build();
+                            .setMimeType("image/*").build();
                     contents.commit(mGoogleApiClient, changeSet);
 
 
                 }
             };
+    private ListView folderListView;
     private SharedPreferences preferences;
     private ImageView imageViewThumbnail;
     ResultCallback<DriveApi.DriveContentsResult> fileDownloadedCallback =
@@ -137,13 +142,25 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     Snackbar.make(textHomeWarning.getRootView(), "Created a folder: " + result.getDriveFolder().getDriveId(), Snackbar.LENGTH_SHORT);
                     Log.e("FOLDERRESULT", "Folder created!" + result.getDriveFolder());
 
+                    result.getDriveFolder().getDriveId();
+                    preferences.edit().putString(Constants.DRIVE_FOLDER_ID, result.getDriveFolder().getDriveId().encodeToString()).apply();
+
                     uploadRandomImage(result);
                 }
             };
+    private SignInButton signInGoogle;
+    private ConnectionResult connectionResult;
+    private FolderListAdapter folderListAdapter;
 
     private void loadImageFromStream(InputStream inputStream) {
-
-        imageViewThumbnail.setImageBitmap(BitmapFactory.decodeStream(inputStream));
+        try {
+            imageViewThumbnail.setImageBitmap(BitmapFactory.decodeStream(inputStream));
+        } catch (OutOfMemoryError ex) {
+            textHomeWarning.setVisibility(View.VISIBLE);
+            textHomeWarning.setText("Image is too big to render. Need extra code to handle. Known error.");
+            buttonOpenDialogCreateFolder.setVisibility(View.VISIBLE);
+            Log.e("Image", "Out of memory");
+        }
 
     }
 
@@ -155,6 +172,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         textHomeWarning = (TextView) findViewById(R.id.t_warning_home);
         buttonOpenDialogCreateFolder = (Button) findViewById(R.id.b_create_folder);
         imageViewThumbnail = (ImageView) findViewById(R.id.image_thumbnail_folder);
+        signInGoogle = (SignInButton) findViewById(R.id.signingoogle);
+        folderListView = (ListView) findViewById(R.id.list_folder_content);
+
+        folderListAdapter = new FolderListAdapter(MainActivity.this);
+        folderListView.setAdapter(folderListAdapter);
+
+//        mResultsAdapter = new ResultsAdapter(this);
+//        mResultsListView.setAdapter(mResultsAdapter);
+
+        signInGoogle.setOnClickListener(this);
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -186,14 +213,62 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         String folderName = preferences.getString(Constants.FOLDER_NAME, null);
         String fileName = preferences.getString(Constants.FILE_NAME, null);
         String fileId = preferences.getString(Constants.DRIVE_FILE_ID, null);
+        String folderId = preferences.getString(Constants.DRIVE_FOLDER_ID, null);
+
         if (folderName != null && !folderName.equals("") && fileName != null && !fileName.equals("")) {
 //            buttonOpenDialogCreateFolder.setVisibility(View.GONE);
 //            textHomeWarning.setVisibility(View.GONE);
-            DriveId sFileId = DriveId.decodeFromString(fileId);
-            DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient, sFileId);
 
-            file.open(mGoogleApiClient, DriveFile.MODE_READ_ONLY, null)
-                    .setResultCallback(fileDownloadedCallback);
+            ResultCallback<? super DriveApi.MetadataBufferResult> folderListCallback = new ResultCallback<DriveApi.MetadataBufferResult>() {
+                @Override
+                public void onResult(@NonNull DriveApi.MetadataBufferResult metadataBufferResult) {
+                    if (!metadataBufferResult.getStatus().isSuccess()) {
+                        textHomeWarning.setText("Problem while retrieving files");
+                        return;
+                    }
+                    folderListAdapter.clear();
+                    Log.e("Meta Data Buf Size : ", String.valueOf(metadataBufferResult.getMetadataBuffer().getCount()));
+                    folderListAdapter.append(metadataBufferResult.getMetadataBuffer());
+                }
+            };
+
+
+            DriveId sFolderId = DriveId.decodeFromString(folderId);
+
+            DriveFolder folder = sFolderId.asDriveFolder();
+//            folder.listChildren(mGoogleApiClient).setResultCallback(folderListCallback);
+
+//            Log.e("FOLDERID", sFolderId.encodeToString());
+            Drive.DriveApi.requestSync(mGoogleApiClient).setResultCallback(new ResultCallback<Status>() {
+                @Override
+                public void onResult(@NonNull Status status) {
+                    Log.e("STATUS", status.toString());
+                }
+            });
+//
+//            DriveFolder folder = Drive.DriveApi.getFolder(mGoogleApiClient, sFolderId);
+
+//            GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(this, DriveScopes.DRIVE);
+//            credential.setSelectedAccountName(accountName);
+//            Drive service = new Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential).build();
+
+            Query query = new Query.Builder()
+//                    .addFilter(Filters.eq(SearchableField.MIME_TYPE, "image/*"))
+                    .build();
+//            folder.queryChildren(mGoogleApiClient, query).setResultCallback(folderListCallback);
+
+            Drive.DriveApi.query(mGoogleApiClient, query).setResultCallback(folderListCallback);
+//            folder.queryChildren(mGoogleApiClient,query).setResultCallback(folderListCallback);
+
+//            folder.listChildren(mGoogleApiClient).setResultCallback(folderListCallback);
+
+
+//            DriveId sFileId = DriveId.decodeFromString(fileId);
+//            Log.e("FILEID", sFileId.encodeToString());
+//            DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient, sFileId);
+//
+//            file.open(mGoogleApiClient, DriveFile.MODE_READ_ONLY, null)
+//                    .setResultCallback(fileDownloadedCallback);
             buttonOpenDialogCreateFolder.setVisibility(View.GONE);
 
         }
@@ -212,15 +287,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         textHomeWarning.setVisibility(View.VISIBLE);
         buttonOpenDialogCreateFolder.setVisibility(View.GONE);
 
+        this.connectionResult = connectionResult;
         if (connectionResult.hasResolution()) {
-            try {
-                textHomeWarning.setVisibility(View.GONE);
-                connectionResult.startResolutionForResult(this, RESOLVE_CONNECTION_REQUEST_CODE);
-                Log.e(TAG, "Connection result resolution");
-            } catch (IntentSender.SendIntentException e) {
-                Snackbar.make(getCurrentFocus().getRootView(), R.string.error_connection_failed, Snackbar.LENGTH_LONG).show();
-                Log.e(TAG, "OnIntent Sender Error");
-            }
+            signInGoogle.setEnabled(true);
+            signInGoogle.setVisibility(View.VISIBLE);
         } else {
             GooglePlayServicesUtil.getErrorDialog(connectionResult.getErrorCode(), this, 0).show();
             Log.e(TAG, "Else Error");
@@ -398,4 +468,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
+    @Override
+    public void onClick(View view) {
+        view.setEnabled(false);
+        if (this.connectionResult == null) {
+            return;
+        }
+        try {
+            textHomeWarning.setVisibility(View.GONE);
+            this.connectionResult.startResolutionForResult(this, RESOLVE_CONNECTION_REQUEST_CODE);
+            Log.e(TAG, "Connection result resolution");
+        } catch (IntentSender.SendIntentException e) {
+            Snackbar.make(getCurrentFocus().getRootView(), R.string.error_connection_failed, Snackbar.LENGTH_LONG).show();
+            Log.e(TAG, "OnIntent Sender Error");
+        }
+
+    }
 }

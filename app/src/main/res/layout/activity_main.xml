@@ -10,6 +10,12 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.passbrook.challenge.MainActivity">
 
+    <com.google.android.gms.common.SignInButton
+        android:id="@+id/signingoogle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/t_warning_home"
         android:layout_width="match_parent"
@@ -25,6 +31,7 @@
         android:id="@+id/b_create_folder"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/t_warning_home"
         android:layout_centerInParent="true"
         android:onClick="openDialogCreateAndUpload"
         android:text="Create &amp; Upload" />
@@ -34,4 +41,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <ListView
+        android:layout_below="@+id/signingoogle"
+        android:id="@+id/list_folder_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </RelativeLayout>

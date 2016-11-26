@@ -8,9 +8,10 @@ package com.passbrook.challenge;
  * a second commercial license of your
  * choosing for companies
  */
-public class Constants {
+class Constants {
 
-    public static final String FOLDER_NAME = "folder_name";
-    public static final String FILE_NAME = "file_name";
-    public static final String DRIVE_FILE_ID = "drive_file_id";
+    static final String FOLDER_NAME = "folder_name";
+    static final String FILE_NAME = "file_name";
+    static final String DRIVE_FILE_ID = "drive_file_id";
+    static final String DRIVE_FOLDER_ID = "drive_folder_id";
 }
