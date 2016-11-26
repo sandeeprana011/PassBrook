@@ -37,26 +37,19 @@ public class FolderListAdapter extends DataBufferAdapter<Metadata> {
         }
         Metadata metadata = getItem(position);
         ImageView imageView = (ImageView) convertView.findViewById(R.id.imageview_icon);
-
-        switch (metadata.getMimeType()) {
-            case "image/jpeg":
-                imageView.setImageResource(R.drawable.jpg);
-                break;
-            case "image/jpg":
-                imageView.setImageResource(R.drawable.jpg);
-                break;
-            case "image/doc*":
-                imageView.setImageResource(R.drawable.doc);
-                break;
-            case "image/png":
-                imageView.setImageResource(R.drawable.png);
-                break;
-            case "image/pdf":
-                imageView.setImageResource(R.drawable.pdf);
-                break;
-            default:
-                imageView.setImageResource(R.drawable.unknown);
-                break;
+        String mime = metadata.getMimeType();
+        if (mime.equals("image/jpeg") || metadata.getTitle().endsWith(".jpeg")) {
+            imageView.setImageResource(R.drawable.jpg);
+        } else if (mime.equals("image/jpg") || metadata.getTitle().endsWith(".jpg")) {
+            imageView.setImageResource(R.drawable.jpg);
+        } else if (mime.equals("image/doc") || metadata.getTitle().endsWith(".doc")) {
+            imageView.setImageResource(R.drawable.doc);
+        } else if (mime.equals("image/png") || metadata.getTitle().endsWith(".png")) {
+            imageView.setImageResource(R.drawable.png);
+        } else if (mime.equals("image/pdf") || metadata.getTitle().endsWith(".pdf")) {
+            imageView.setImageResource(R.drawable.pdf);
+        } else {
+            imageView.setImageResource(R.drawable.unknown);
         }
 
         Log.e("POSITION", String.valueOf(position));

@@ -22,7 +22,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -46,6 +45,7 @@ import com.passbrook.challenge.interfaces.OnCreateButtonClicked;
 import com.passbrook.challenge.interfaces.OnUpdateUI;
 import com.passbrook.challenge.utility.AsyncImageGet;
 import com.passbrook.challenge.utility.UIUpdate;
+import com.passbrook.challenge.utility.Utility;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private static final String TAG = "MAINACTIVITY";
     private static final int RESOLVE_CONNECTION_REQUEST_CODE = 12;
     private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 43;
+    private static final int PICKFILE_REQUEST_CODE = 34;
     TextView textHomeWarning;
     Button buttonOpenDialogCreateFolder, uploadRandomPhoto;
 
@@ -65,23 +66,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private GoogleApiClient mGoogleApiClient;
     private ListView folderListView;
     private SharedPreferences preferences;
-    private ImageView imageViewThumbnail;
-    ResultCallback<DriveApi.DriveContentsResult> fileDownloadedCallback =
-            new ResultCallback<DriveApi.DriveContentsResult>() {
-                @Override
-                public void onResult(DriveApi.DriveContentsResult result) {
-                    if (!result.getStatus().isSuccess()) {
-                        // display an error saying file can't be opened
-                        return;
-                    }
-                    // DriveContents object contains pointers
-                    // to the actual byte stream
-                    DriveContents contents = result.getDriveContents();
-
-                    loadImageFromStream(contents.getInputStream());
-                }
-            };
-    private DriveFolder resultDriveFolder;
+    //    private DriveFolder resultDriveFolder;
     ResultCallback<DriveFolder.DriveFolderResult> folderCreatedCallback = new
             ResultCallback<DriveFolder.DriveFolderResult>() {
                 @Override
@@ -104,6 +89,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     preferences.edit().putString(Constants.DRIVE_FOLDER_ID, result.getDriveFolder().getDriveId().encodeToString()).apply();
 
                     uploadRandomImage(result.getDriveFolder());
+                }
+            };
+    private ImageView imageViewThumbnail;
+    ResultCallback<DriveApi.DriveContentsResult> fileDownloadedCallback =
+            new ResultCallback<DriveApi.DriveContentsResult>() {
+                @Override
+                public void onResult(DriveApi.DriveContentsResult result) {
+                    if (!result.getStatus().isSuccess()) {
+                        // display an error saying file can't be opened
+                        return;
+                    }
+                    // DriveContents object contains pointers
+                    // to the actual byte stream
+                    DriveContents contents = result.getDriveContents();
+
+                    loadImageFromStream(contents.getInputStream());
                 }
             };
     private SignInButton signInGoogle;
@@ -330,7 +331,25 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     buttonOpenDialogCreateFolder.setVisibility(View.GONE);
                 }
                 break;
+            case PICKFILE_REQUEST_CODE:
+                if (data == null) return;
+                String fPathResulted = data.getDataString();
+                if (fPathResulted != null) {
+                    Log.e("FILE PATH", fPathResulted);
+
+//                this.resultDriveFolder = getDriverFolder();
+                    this.imageLoadingFinished(fPathResulted);
+
+                }
+                break;
         }
+    }
+
+    private DriveFolder getDriverFolder() {
+        String folderId = preferences.getString(Constants.DRIVE_FOLDER_ID, null);
+        DriveId driveId = DriveId.decodeFromString(folderId);
+        DriveFolder folder = driveId.asDriveFolder();
+        return folder;
     }
 
     public void openDialogCreateAndUpload(View view) {
@@ -366,7 +385,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private void uploadRandomImage(DriveFolder driveFolder) {
 
-        this.resultDriveFolder = driveFolder;
+//        this.resultDriveFolder = this.getDriverFolder();
         checkCompatibilityRunCursorAndUploadRandomImage();
 
 
@@ -389,18 +408,21 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         File file = new File(pathToImage);
 
+
         //saving file name to get after storing the image
         preferences.edit().putString(Constants.FILE_NAME, file.getName()).apply();
 
         MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
                 .setTitle(file.getName())
-                .setMimeType("image/jpeg").build();
+                .setMimeType(Utility.getMimeType(pathToImage)).build();
+        Log.e("MIMETYPE", Utility.getMimeType(pathToImage));
         // Create a file in the root folder
-        this.resultDriveFolder.createFile(mGoogleApiClient, changeSet, null)
+        this.getDriverFolder().createFile(mGoogleApiClient, changeSet, null)
                 .setResultCallback(this);
 
         Log.e("PATHTOIMAGE", pathToImage + "");
     }
+
 
     @Override
     public void onResult(@NonNull DriveFolder.DriveFileResult driveFileResult) {
@@ -504,5 +526,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             Log.e(TAG, "OnIntent Sender Error");
         }
 
+    }
+
+    public void activityBuilder(View view) {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");
+        startActivityForResult(intent, PICKFILE_REQUEST_CODE);
     }
 }
