@@ -7,7 +7,6 @@ import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.util.Log;
 
-import com.google.android.gms.drive.DriveFolder;
 import com.passbrook.challenge.interfaces.OnUpdateUI;
 
 /**
@@ -25,9 +24,9 @@ public class AsyncImageGet extends AsyncTask<Context, UIUpdate, String> {
 
 
     private OnUpdateUI onUpdateUIListener;
-    private DriveFolder.DriveFolderResult result;
+//    private DriveFolder.DriveFolderResult result;
 
-    public AsyncImageGet(OnUpdateUI onUpdateUIListener, DriveFolder.DriveFolderResult result) {
+    public AsyncImageGet(OnUpdateUI onUpdateUIListener) {
         this.onUpdateUIListener = onUpdateUIListener;
 //        this.result = result;
     }

@@ -41,4 +41,5 @@ public class FolderListAdapter extends DataBufferAdapter<Metadata> {
         titleTextView.setText(metadata.getTitle());
         return convertView;
     }
+
 }

@@ -42,8 +42,15 @@
         android:layout_height="match_parent" />
 
     <ListView
-        android:layout_below="@+id/signingoogle"
         android:id="@+id/list_folder_content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_below="@+id/signingoogle" />
+
+    <Button
+        android:id="@+id/uploadmore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:text="Upload Random Photo" />
 </RelativeLayout>

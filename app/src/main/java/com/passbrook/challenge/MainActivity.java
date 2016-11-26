@@ -58,7 +58,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private static final int RESOLVE_CONNECTION_REQUEST_CODE = 12;
     private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 43;
     TextView textHomeWarning;
-    Button buttonOpenDialogCreateFolder;
+    Button buttonOpenDialogCreateFolder, uploadRandomPhoto;
+
     private String filePath;
     private GoogleApiClient mGoogleApiClient;
     ResultCallback<DriveApi.DriveContentsResult> contentsOpenedCallback =
@@ -123,12 +124,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                 }
             };
-    private DriveFolder.DriveFolderResult result;
+    private DriveFolder resultDriveFolder;
     ResultCallback<DriveFolder.DriveFolderResult> folderCreatedCallback = new
             ResultCallback<DriveFolder.DriveFolderResult>() {
                 @Override
                 public void onResult(DriveFolder.DriveFolderResult result) {
-                    Log.e("FOLDERRESULT", "got result");
+                    Log.e("FOLDERRESULT", "got resultDriveFolder");
                     if (!result.getStatus().isSuccess()) {
 //                        showMessage("Error while trying to create the folder");
                         Log.e("FOLDERRESULT", "Error : creating folder");
@@ -145,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     result.getDriveFolder().getDriveId();
                     preferences.edit().putString(Constants.DRIVE_FOLDER_ID, result.getDriveFolder().getDriveId().encodeToString()).apply();
 
-                    uploadRandomImage(result);
+                    uploadRandomImage(result.getDriveFolder());
                 }
             };
     private SignInButton signInGoogle;
@@ -174,6 +175,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         imageViewThumbnail = (ImageView) findViewById(R.id.image_thumbnail_folder);
         signInGoogle = (SignInButton) findViewById(R.id.signingoogle);
         folderListView = (ListView) findViewById(R.id.list_folder_content);
+        uploadRandomPhoto = (Button) findViewById(R.id.uploadmore);
 
         folderListAdapter = new FolderListAdapter(MainActivity.this);
         folderListView.setAdapter(folderListAdapter);
@@ -219,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 //            buttonOpenDialogCreateFolder.setVisibility(View.GONE);
 //            textHomeWarning.setVisibility(View.GONE);
 
-            ResultCallback<? super DriveApi.MetadataBufferResult> folderListCallback = new ResultCallback<DriveApi.MetadataBufferResult>() {
+            final ResultCallback<? super DriveApi.MetadataBufferResult> folderListCallback = new ResultCallback<DriveApi.MetadataBufferResult>() {
                 @Override
                 public void onResult(@NonNull DriveApi.MetadataBufferResult metadataBufferResult) {
                     if (!metadataBufferResult.getStatus().isSuccess()) {
@@ -235,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             DriveId sFolderId = DriveId.decodeFromString(folderId);
 
-            DriveFolder folder = sFolderId.asDriveFolder();
+            final DriveFolder folder = sFolderId.asDriveFolder();
 //            folder.listChildren(mGoogleApiClient).setResultCallback(folderListCallback);
 
 //            Log.e("FOLDERID", sFolderId.encodeToString());
@@ -243,6 +245,15 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 @Override
                 public void onResult(@NonNull Status status) {
                     Log.e("STATUS", status.toString());
+
+                    Query query = new Query.Builder()
+//                    .addFilter(Filters.eq(SearchableField.MIME_TYPE, "image/*"))
+                            .build();
+                    folder.queryChildren(mGoogleApiClient, query).setResultCallback(folderListCallback);
+
+
+//                    Drive.DriveApi.query(mGoogleApiClient, query).setResultCallback(folderListCallback);
+
                 }
             });
 //
@@ -252,13 +263,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 //            credential.setSelectedAccountName(accountName);
 //            Drive service = new Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential).build();
 
-            Query query = new Query.Builder()
-//                    .addFilter(Filters.eq(SearchableField.MIME_TYPE, "image/*"))
-                    .build();
-//            folder.queryChildren(mGoogleApiClient, query).setResultCallback(folderListCallback);
-
-            Drive.DriveApi.query(mGoogleApiClient, query).setResultCallback(folderListCallback);
-//            folder.queryChildren(mGoogleApiClient,query).setResultCallback(folderListCallback);
+            //            folder.queryChildren(mGoogleApiClient,query).setResultCallback(folderListCallback);
 
 //            folder.listChildren(mGoogleApiClient).setResultCallback(folderListCallback);
 
@@ -343,10 +348,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .setResultCallback(folderCreatedCallback);
     }
 
-    private void uploadRandomImage(DriveFolder.DriveFolderResult result) {
+    private void uploadRandomImage(DriveFolder driveFolder) {
 
-        this.result = result;
-        checkCompatibility();
+        this.resultDriveFolder = driveFolder;
+        checkCompatibilityRunCursorAndUploadRandomImage();
 
 
     }
@@ -375,8 +380,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .setTitle(file.getName())
                 .setMimeType("image/jpeg").build();
         // Create a file in the root folder
-        this.result.getDriveFolder()
-                .createFile(mGoogleApiClient, changeSet, null)
+        this.resultDriveFolder.createFile(mGoogleApiClient, changeSet, null)
                 .setResultCallback(this);
 
         Log.e("PATHTOIMAGE", pathToImage + "");
@@ -405,7 +409,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 //
 //    }
 
-    public void checkCompatibility() {
+    public void checkCompatibilityRunCursorAndUploadRandomImage() {
         // Here, thisActivity is the current activity
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -432,12 +436,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                 // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
                 // app-defined int constant. The callback method gets the
-                // result of the request.
+                // resultDriveFolder of the request.
             }
         } else {
             Log.e("Some", "Permission granted");
             textHomeWarning.setVisibility(View.VISIBLE);
-            AsyncImageGet asyncImageGet = new AsyncImageGet(this, result);
+            AsyncImageGet asyncImageGet = new AsyncImageGet(this);
             asyncImageGet.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, this);
         }
     }
@@ -448,11 +452,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_READ_CONTACTS: {
-                // If request is cancelled, the result arrays are empty.
+                // If request is cancelled, the resultDriveFolder arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     textHomeWarning.setVisibility(View.VISIBLE);
-                    AsyncImageGet asyncImageGet = new AsyncImageGet(this, result);
+                    AsyncImageGet asyncImageGet = new AsyncImageGet(this);
                     asyncImageGet.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, this);
 
                 } else {
@@ -477,7 +481,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         try {
             textHomeWarning.setVisibility(View.GONE);
             this.connectionResult.startResolutionForResult(this, RESOLVE_CONNECTION_REQUEST_CODE);
-            Log.e(TAG, "Connection result resolution");
+            Log.e(TAG, "Connection resultDriveFolder resolution");
         } catch (IntentSender.SendIntentException e) {
             Snackbar.make(getCurrentFocus().getRootView(), R.string.error_connection_failed, Snackbar.LENGTH_LONG).show();
             Log.e(TAG, "OnIntent Sender Error");
